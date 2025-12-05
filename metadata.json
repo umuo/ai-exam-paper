@@ -1,0 +1,5 @@
+{
+  "name": "Smart Exam Generator",
+  "description": "An AI-powered tool to generate printable, professional-grade exam papers for Primary, Middle, and High School students based on natural language descriptions.",
+  "requestFramePermissions": []
+}
