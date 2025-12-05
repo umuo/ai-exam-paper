@@ -65,7 +65,7 @@ const ExamPaper: React.FC<ExamPaperProps> = ({ data, onBack }) => {
       const opt = {
         margin: 0,
         filename: `${data.title || 'exam_paper'}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
+        image: { type: 'jpeg' as const, quality: 0.98 },
         html2canvas: {
           scale: 2,
           useCORS: true,
@@ -78,11 +78,11 @@ const ExamPaper: React.FC<ExamPaperProps> = ({ data, onBack }) => {
           y: 0
         },
         jsPDF: {
-          unit: 'mm',
-          format: 'a4',
-          orientation: 'portrait'
+          unit: 'mm' as const,
+          format: 'a4' as const,
+          orientation: 'portrait' as const
         },
-        pagebreak: { mode: ['css', 'legacy'] }
+        pagebreak: { mode: ['css', 'legacy'] as const }
       };
 
       await html2pdf().set(opt).from(clone).save();
