@@ -1,7 +1,9 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
-import { EducationLevel, ExamRequest } from '../types';
+import { EducationLevel, ExamRequest } from '@/types';
 import { BookOpen, Sparkles, Loader2, Wand2 } from 'lucide-react';
-import { optimizeTopicDescriptionStream } from '../services/geminiService';
+import { optimizeTopicDescriptionStream } from '@/services/geminiService';
 
 interface ExamFormProps {
   onSubmit: (data: ExamRequest) => void;
@@ -21,7 +23,7 @@ const ExamForm: React.FC<ExamFormProps> = ({ onSubmit, isLoading }) => {
   const [subject, setSubject] = useState('数学');
   const [topicDescription, setTopicDescription] = useState('');
   const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');
-  
+
   const [isOptimizing, setIsOptimizing] = useState(false);
 
   // Update grade options when level changes
@@ -33,7 +35,7 @@ const ExamForm: React.FC<ExamFormProps> = ({ onSubmit, isLoading }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!topicDescription.trim()) return;
-    
+
     onSubmit({
       level,
       gradeSpec,
@@ -46,7 +48,7 @@ const ExamForm: React.FC<ExamFormProps> = ({ onSubmit, isLoading }) => {
   const handleOptimizeDescription = async () => {
     const currentInput = topicDescription;
     if (!currentInput.trim()) return;
-    
+
     setIsOptimizing(true);
     // NOTE: We do NOT clear the input here. We wait for the first chunk to arrive.
     // This prevents a jarring "empty box" state while the AI is thinking.
@@ -55,7 +57,7 @@ const ExamForm: React.FC<ExamFormProps> = ({ onSubmit, isLoading }) => {
       const stream = optimizeTopicDescriptionStream(currentInput, gradeSpec, subject);
       let accumulatedText = '';
       let hasReceivedFirstChunk = false;
-      
+
       for await (const chunk of stream) {
         if (chunk) {
           accumulatedText += chunk;
@@ -66,7 +68,7 @@ const ExamForm: React.FC<ExamFormProps> = ({ onSubmit, isLoading }) => {
           hasReceivedFirstChunk = true;
         }
       }
-      
+
       // If the stream completed but we got nothing (rare), revert to original
       if (!hasReceivedFirstChunk && !accumulatedText) {
         setTopicDescription(currentInput);
@@ -108,7 +110,7 @@ const ExamForm: React.FC<ExamFormProps> = ({ onSubmit, isLoading }) => {
               ))}
             </select>
           </div>
-          
+
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">具体年级</label>
             <select
@@ -145,11 +147,10 @@ const ExamForm: React.FC<ExamFormProps> = ({ onSubmit, isLoading }) => {
                   key={d}
                   type="button"
                   onClick={() => setDifficulty(d)}
-                  className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${
-                    difficulty === d 
-                      ? 'bg-white text-blue-600 shadow-sm' 
+                  className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${difficulty === d
+                      ? 'bg-white text-blue-600 shadow-sm'
                       : 'text-gray-500 hover:text-gray-700'
-                  }`}
+                    }`}
                 >
                   {d === 'easy' ? '基础' : d === 'medium' ? '适中' : '挑战'}
                 </button>
@@ -176,14 +177,13 @@ const ExamForm: React.FC<ExamFormProps> = ({ onSubmit, isLoading }) => {
             </button>
           </div>
           <div className="relative">
-             <textarea
+            <textarea
               value={topicDescription}
               onChange={(e) => setTopicDescription(e.target.value)}
               readOnly={isOptimizing}
               placeholder="例如：100以内加减法，包含进位加法；或者是：古诗词默写与鉴赏，重点考察唐诗。"
-              className={`w-full rounded-lg border p-3 h-32 focus:ring-2 focus:ring-blue-500 outline-none resize-none transition-colors ${
-                isOptimizing ? 'bg-purple-50 border-purple-200 text-purple-800' : 'bg-white border-gray-300'
-              }`}
+              className={`w-full rounded-lg border p-3 h-32 focus:ring-2 focus:ring-blue-500 outline-none resize-none transition-colors ${isOptimizing ? 'bg-purple-50 border-purple-200 text-purple-800' : 'bg-white border-gray-300'
+                }`}
               required
             />
             {isOptimizing && (
@@ -198,11 +198,10 @@ const ExamForm: React.FC<ExamFormProps> = ({ onSubmit, isLoading }) => {
         <button
           type="submit"
           disabled={isLoading || !topicDescription.trim() || isOptimizing}
-          className={`w-full py-3.5 px-4 rounded-xl text-white font-semibold flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg ${
-            isLoading || isOptimizing 
-              ? 'bg-blue-400 cursor-not-allowed' 
+          className={`w-full py-3.5 px-4 rounded-xl text-white font-semibold flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg ${isLoading || isOptimizing
+              ? 'bg-blue-400 cursor-not-allowed'
               : 'bg-blue-600 hover:bg-blue-700 active:scale-[0.99]'
-          }`}
+            }`}
         >
           {isLoading ? (
             <>
