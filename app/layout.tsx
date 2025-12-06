@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import AppShell from '@/components/Layout/AppShell';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -13,8 +14,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="zh-CN">
-      <body className="bg-gray-100 text-gray-900 antialiased">
-        {children}
+      <body className="text-gray-900 antialiased">
+        <AppShell>
+          {children}
+        </AppShell>
       </body>
     </html>
   );

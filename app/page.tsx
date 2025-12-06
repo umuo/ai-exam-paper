@@ -1,101 +1,70 @@
 'use client';
 
-import { useState } from 'react';
-import ExamForm from '@/components/ExamForm';
-import ExamPaper from '@/components/ExamPaper';
-import { generateExamPaper } from '@/services/geminiService';
-import { ExamData, ExamRequest } from '@/types';
-import { FileText } from 'lucide-react';
+import Link from 'next/link';
+import { FileText, ArrowRight, History, Sparkles } from 'lucide-react';
 
-export default function Home() {
-    const [step, setStep] = useState<'form' | 'exam'>('form');
-    const [isLoading, setIsLoading] = useState(false);
-    const [examData, setExamData] = useState<ExamData | null>(null);
-    const [error, setError] = useState<string | null>(null);
-
-    const handleGenerate = async (request: ExamRequest) => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            const data = await generateExamPaper(request);
-            setExamData(data);
-            setStep('exam');
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Something went wrong');
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleBack = () => {
-        setStep('form');
-    };
-
+export default function Dashboard() {
     return (
-        <div className="min-h-screen bg-gray-100 font-sans">
+        <div className="space-y-6">
+            <div className="border-b border-gray-200 pb-5">
+                <h3 className="text-2xl font-semibold leading-6 text-gray-900">仪表盘</h3>
+                <p className="mt-2 text-sm text-gray-500">欢迎回来！准备好为学生们创建新的试卷了吗？</p>
+            </div>
 
-            {/* Header - Hidden on Print */}
-            <header className="bg-white border-b border-gray-200 py-4 px-6 mb-8 shadow-sm no-print">
-                <div className="max-w-7xl mx-auto flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-blue-700">
-                        <div className="bg-blue-600 text-white p-2 rounded-lg">
-                            <FileText size={24} />
-                        </div>
-                        <h1 className="text-xl font-bold tracking-tight">AI 智能试卷生成器</h1>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {/* Quick Action: Generate Exam */}
+                <div className="relative group bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all hover:border-blue-300">
+                    <div className="absolute top-6 right-6 text-blue-100 group-hover:text-blue-50 transition-colors">
+                        <FileText size={48} />
                     </div>
-                    <div className="text-sm text-gray-500">
-                        Powered by Gemini 2.5 Flash
+                    <div className="flex flex-col h-full">
+                        <div className="p-2 bg-blue-50 w-fit rounded-lg text-blue-600 mb-4">
+                            <Sparkles size={24} />
+                        </div>
+                        <h4 className="text-lg font-semibold text-gray-900">快速生成试卷</h4>
+                        <p className="mt-2 text-sm text-gray-500 mb-6 flex-1">
+                            输入知识点，AI 立即生成完整试卷。支持数学、语文、英语等全学科。
+                        </p>
+                        <Link
+                            href="/generate"
+                            className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800"
+                        >
+                            开始生成 <ArrowRight className="ml-1 w-4 h-4" />
+                        </Link>
                     </div>
                 </div>
-            </header>
 
-            <main className="container mx-auto px-4 pb-12">
-
-                {step === 'form' && (
-                    <div className="flex flex-col items-center justify-center min-h-[60vh] animate-fade-in no-print">
-                        <div className="text-center mb-8 max-w-lg">
-                            <h2 className="text-4xl font-extrabold text-gray-900 mb-4">一键生成专业试卷</h2>
-                            <p className="text-lg text-gray-600">输入年级、科目和知识点，AI 自动为您出题、排版，支持直接打印和导出 PDF。</p>
-                        </div>
-
-                        {error && (
-                            <div className="w-full max-w-2xl mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-center gap-2">
-                                <span>⚠️ {error}</span>
-                            </div>
-                        )}
-
-                        <ExamForm onSubmit={handleGenerate} isLoading={isLoading} />
-
-                        {/* Examples */}
-                        <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-500 w-full max-w-4xl">
-                            <div className="bg-white p-4 rounded-lg border border-gray-200 hover:border-blue-300 transition-colors">
-                                <span className="font-bold block text-gray-800 mb-1">小学数学</span>
-                                &quot;三年级上册期末复习，重点考察三位数加减法、长方形正方形周长。&quot;
-                            </div>
-                            <div className="bg-white p-4 rounded-lg border border-gray-200 hover:border-blue-300 transition-colors">
-                                <span className="font-bold block text-gray-800 mb-1">初中物理</span>
-                                &quot;八年级力学基础，包含重力、弹力、摩擦力的受力分析和简单计算。&quot;
-                            </div>
-                            <div className="bg-white p-4 rounded-lg border border-gray-200 hover:border-blue-300 transition-colors">
-                                <span className="font-bold block text-gray-800 mb-1">高中语文</span>
-                                &quot;高一必修上册，古诗词鉴赏专项训练，包含《涉江采芙蓉》等。&quot;
-                            </div>
-                        </div>
+                {/* Quick Action: History */}
+                <div className="relative group bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all hover:border-purple-300">
+                    <div className="absolute top-6 right-6 text-purple-100 group-hover:text-purple-50 transition-colors">
+                        <History size={48} />
                     </div>
-                )}
+                    <div className="flex flex-col h-full">
+                        <div className="p-2 bg-purple-50 w-fit rounded-lg text-purple-600 mb-4">
+                            <History size={24} />
+                        </div>
+                        <h4 className="text-lg font-semibold text-gray-900">历史试卷</h4>
+                        <p className="mt-2 text-sm text-gray-500 mb-6 flex-1">
+                            查看并管理您过去生成的试卷。支持重新编辑和下载。
+                        </p>
+                        <Link
+                            href="/history"
+                            className="inline-flex items-center text-sm font-medium text-purple-600 hover:text-purple-800"
+                        >
+                            查看历史 <ArrowRight className="ml-1 w-4 h-4" />
+                        </Link>
+                    </div>
+                </div>
+            </div>
 
-                {step === 'exam' && examData && (
-                    <ExamPaper data={examData} onBack={handleBack} />
-                )}
-
-            </main>
-
-            {/* Footer - Hidden on Print */}
-            {step === 'form' && (
-                <footer className="text-center text-gray-400 py-8 no-print">
-                    &copy; {new Date().getFullYear()} ExamGen AI. All rights reserved.
-                </footer>
-            )}
+            <div className="mt-8 bg-blue-50 rounded-xl p-6 border border-blue-100">
+                <h4 className="font-semibold text-blue-900 mb-2">💡 使用小贴士</h4>
+                <ul className="list-disc list-inside text-sm text-blue-800 space-y-1">
+                    <li>尝试在生成时描述具体的题型，例如“需要5道选择题和3道应用题”。</li>
+                    <li>生成的试卷可以直接导出为 PDF，方便打印。</li>
+                    <li>如果对题目不满意，可以说“换一题”来重新生成（功能开发中）。</li>
+                </ul>
+            </div>
         </div>
     );
 }
