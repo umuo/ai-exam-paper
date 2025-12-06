@@ -32,6 +32,7 @@ export interface Question {
   answerSpaceLines?: number; // How many lines of space to leave
   imagePrompt?: string; // Prompt for generating an image
   imageUrl?: string; // The generated base64 image URL
+  textDiagram?: string; // ASCII visual representation of the geometry shape defined by user usage
 }
 
 export interface Section {

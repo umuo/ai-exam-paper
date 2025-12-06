@@ -147,12 +147,12 @@ const PracticePaper: React.FC<PracticePaperProps> = ({ data, onBack }) => {
                         return (
                             <div key={sIndex}>
                                 <div className={`space-y-4 ${section.questions[0] && [
-                                        QuestionType.CALCULATION,
-                                        QuestionType.JUDGMENT,
-                                        QuestionType.FILL_IN_BLANK
-                                    ].includes(section.questions[0].type)
-                                        ? 'grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4 space-y-0'
-                                        : ''
+                                    QuestionType.CALCULATION,
+                                    QuestionType.JUDGMENT,
+                                    QuestionType.FILL_IN_BLANK
+                                ].includes(section.questions[0].type)
+                                    ? 'grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4 space-y-0'
+                                    : ''
                                     }`}>
                                     {section.questions.map((q, qIndex) => (
                                         <QuestionItem key={q.id} question={q} index={qIndex + 1} />
@@ -198,6 +198,14 @@ const QuestionItem: React.FC<{ question: Question; index: number }> = ({ questio
                             <span className="inline-block ml-4 font-serif">（ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ）</span>
                         )}
                     </div>
+
+                    {question.textDiagram && (
+                        <div className="my-2 p-2 border border-gray-200 rounded bg-gray-50 block w-fit select-none">
+                            <pre className="font-mono text-sm whitespace-pre font-bold text-gray-800 leading-tight">
+                                {question.textDiagram}
+                            </pre>
+                        </div>
+                    )}
 
                     {question.imageUrl && (
                         <div className="my-2 p-1 border border-transparent rounded block w-fit">

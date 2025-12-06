@@ -57,9 +57,13 @@ const practiceSchema: Schema = {
                                     items: { type: Type.STRING }
                                 },
                                 answerSpaceLines: { type: Type.INTEGER },
+                                textDiagram: {
+                                    type: Type.STRING,
+                                    description: "ASCII art or text-based visual representation of geometry/physics diagrams. Use this INSTEAD of imagePrompt."
+                                },
                                 imagePrompt: {
                                     type: Type.STRING,
-                                    description: "Visual description for geometry/physics. EMPTY for text-only."
+                                    description: "DEPRECATED. Do not use."
                                 }
                             },
                             required: ["id", "number", "text", "type", "score"]
@@ -73,31 +77,7 @@ const practiceSchema: Schema = {
     required: ["title", "subject", "sections"]
 };
 
-const generateQuestionImage = async (prompt: string): Promise<string | undefined> => {
-    if (!prompt || prompt.trim() === '') return undefined;
-    try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.0-flash-exp-image-generation',
-            contents: {
-                parts: [
-                    { text: `Create a simple, black and white line drawing for a school test. White background. Clear lines. No text labels. Subject: ${prompt}` },
-                ],
-            },
-            config: {
-                responseModalities: ["Text", "Image"],
-            }
-        });
-        for (const part of response.candidates?.[0]?.content?.parts || []) {
-            if (part.inlineData) {
-                return `data:image/png;base64,${part.inlineData.data}`;
-            }
-        }
-    } catch (error) {
-        console.warn(`Failed to generate image for prompt: ${prompt}`, error);
-        return undefined;
-    }
-    return undefined;
-};
+
 
 interface PracticeRequest {
     level: string;
@@ -121,14 +101,14 @@ export async function POST(request: NextRequest) {
         let imageInstruction = "";
 
         if (questionType === 'geometry') {
-            typeInstruction = "生成 几何/图形题。通常归类为 calculation 或 short_answer。重点是必须包含几何图形描述。";
-            imageInstruction = "每道题都必须生成 imagePrompt 来描述几何图形 (e.g. triangle, circle, angles)。";
+            typeInstruction = "生成 几何/图形题。通常归类为 calculation 或 short_answer。重点是必须包含几何图形的 ASCII 字符画。";
+            imageInstruction = "每道题都必须生成 textDiagram 来描述几何图形 (e.g. triangle, circle, angles) 使用 ASCII 字符拼接。不要使用 imagePrompt。";
         } else {
             typeInstruction = `生成 ${questionType} (QuestionType 对应值) 类型题目。`;
             if (['calculation', 'application', 'short_answer'].includes(questionType)) {
-                imageInstruction = "如果有必要（如物理场景、几何），可以生成 imagePrompt。否则留空。";
+                imageInstruction = "如果有必要（如物理场景、几何），可以生成 textDiagram (ASCII ART)。否则留空。";
             } else {
-                imageInstruction = "禁止生成 imagePrompt。";
+                imageInstruction = "禁止生成 textDiagram 和 imagePrompt。";
             }
 
             // STRICT constraint for calculation
@@ -169,26 +149,6 @@ export async function POST(request: NextRequest) {
         const jsonText = response.text;
         if (!jsonText) throw new Error("No data received from AI");
         const examData = JSON.parse(jsonText);
-
-        // Scan for images
-        const imageGenerationPromises: Promise<void>[] = [];
-        for (const section of examData.sections) {
-            for (const question of section.questions) {
-                if (question.imagePrompt && question.imagePrompt.trim().length > 0) {
-                    const delay = Math.floor(Math.random() * 500);
-                    const promise = new Promise<void>(resolve => setTimeout(resolve, delay))
-                        .then(() => generateQuestionImage(question.imagePrompt!))
-                        .then((url) => {
-                            if (url) question.imageUrl = url;
-                        });
-                    imageGenerationPromises.push(promise);
-                }
-            }
-        }
-
-        if (imageGenerationPromises.length > 0) {
-            await Promise.allSettled(imageGenerationPromises);
-        }
 
         return NextResponse.json(examData);
 

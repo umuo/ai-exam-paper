@@ -57,9 +57,13 @@ const examSchema: Schema = {
                                     description: "Options for multiple choice questions (A, B, C, D)"
                                 },
                                 answerSpaceLines: { type: Type.INTEGER, description: "Recommended number of blank lines for answer. 0 for Choice/Judgment." },
+                                textDiagram: {
+                                    type: Type.STRING,
+                                    description: "ASCII art or text-based visual representation of geometry/physics diagrams. Use this INSTEAD of imagePrompt."
+                                },
                                 imagePrompt: {
                                     type: Type.STRING,
-                                    description: "For GEOMETRY or PHYSICS diagrams ONLY. Provide visual description in English. Leave EMPTY for text-only questions, Multiple Choice, or Fill-in-blanks."
+                                    description: "DEPRECATED. Do not use."
                                 }
                             },
                             required: ["id", "number", "text", "type", "score"]
@@ -73,34 +77,7 @@ const examSchema: Schema = {
     required: ["title", "subject", "sections"]
 };
 
-// Helper function to generate an image for a single question
-const generateQuestionImage = async (prompt: string): Promise<string | undefined> => {
-    if (!prompt || prompt.trim() === '') return undefined;
 
-    try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.0-flash-exp-image-generation',
-            contents: {
-                parts: [
-                    { text: `Create a simple, black and white line drawing for a school test. White background. Clear lines. No text labels. Subject: ${prompt}` },
-                ],
-            },
-            config: {
-                responseModalities: ["Text", "Image"],
-            }
-        });
-
-        for (const part of response.candidates?.[0]?.content?.parts || []) {
-            if (part.inlineData) {
-                return `data:image/png;base64,${part.inlineData.data}`;
-            }
-        }
-    } catch (error) {
-        console.warn(`Failed to generate image for prompt: ${prompt}`, error);
-        return undefined;
-    }
-    return undefined;
-};
 
 interface ExamRequest {
     level: string;
@@ -131,8 +108,8 @@ export async function POST(request: NextRequest) {
       
       **关于图片 (Images) 的严格规则**: 
       - **禁止** 为 选择题(Multiple Choice)、填空题(Fill in Blank)、判断题(Judgment) 生成图片描述。这些题型必须是纯文本。
-      - **仅限** 在 应用题、计算题、简答题 中，且确实需要几何图形、物理电路图或特定场景示意图辅助解题时，才生成图片描述(imagePrompt)。
-      - imagePrompt 必须使用英文。
+      - **仅限** 在 应用题、计算题、简答题 中，且确实需要几何图形、物理电路图或特定场景示意图辅助解题时，才生成 textDiagram (ASCII ART)。
+      - 禁止生成 imagePrompt。
       
       内容必须是中文。格式要正式。
     `;
@@ -152,43 +129,6 @@ export async function POST(request: NextRequest) {
         if (!jsonText) throw new Error("No data received from AI");
 
         const examData = JSON.parse(jsonText);
-
-        // 2. Scan for questions needing images and generate them in parallel
-        const imageGenerationPromises: Promise<void>[] = [];
-
-        // Define types that are strictly forbidden from having images
-        const noImageTypes = [
-            QuestionType.MULTIPLE_CHOICE,
-            QuestionType.FILL_IN_BLANK,
-            QuestionType.JUDGMENT
-        ];
-
-        for (const section of examData.sections) {
-            for (const question of section.questions) {
-                // Double check: skip image generation for restricted types
-                if (noImageTypes.includes(question.type as QuestionType)) {
-                    question.imagePrompt = undefined;
-                    continue;
-                }
-
-                if (question.imagePrompt && question.imagePrompt.trim().length > 0) {
-                    const delay = Math.floor(Math.random() * 500);
-                    const promise = new Promise<void>(resolve => setTimeout(resolve, delay))
-                        .then(() => generateQuestionImage(question.imagePrompt!))
-                        .then((url) => {
-                            if (url) {
-                                question.imageUrl = url;
-                            }
-                        });
-                    imageGenerationPromises.push(promise);
-                }
-            }
-        }
-
-        // Wait for all images to generate (or fail gracefully)
-        if (imageGenerationPromises.length > 0) {
-            await Promise.allSettled(imageGenerationPromises);
-        }
 
         return NextResponse.json(examData);
 
