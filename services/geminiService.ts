@@ -1,4 +1,4 @@
-import { ExamData, ExamRequest } from "@/types";
+import { ExamData, ExamRequest, PracticeRequest } from "@/types";
 
 // Streaming function to optimize the topic description
 export const optimizeTopicDescriptionStream = async function* (rawInput: string, grade: string, subject: string) {
@@ -48,6 +48,23 @@ export const generateExamPaper = async (request: ExamRequest): Promise<ExamData>
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.error || '生成试卷失败，请重试。');
+  }
+
+  return response.json();
+};
+
+export const generatePracticeQuestions = async (request: PracticeRequest): Promise<ExamData> => {
+  const response = await fetch('/api/generate-practice', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || '生成专项练习失败，请重试。');
   }
 
   return response.json();

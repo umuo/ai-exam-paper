@@ -59,3 +59,12 @@ export interface ExamRequest {
   topicDescription: string;
   difficulty: 'easy' | 'medium' | 'hard';
 }
+
+export interface PracticeRequest {
+  level: EducationLevel;
+  gradeSpec: string;
+  subject: string;
+  questionType: QuestionType;
+  topicDescription: string;
+  count: number;
+}

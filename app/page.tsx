@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { FileText, ArrowRight, History, Sparkles } from 'lucide-react';
+import { FileText, ArrowRight, History, Sparkles, BookOpen } from 'lucide-react';
 
 export default function Dashboard() {
     return (
@@ -34,13 +34,35 @@ export default function Dashboard() {
                     </div>
                 </div>
 
-                {/* Quick Action: History */}
+                {/* Quick Action: Specialized Practice */}
                 <div className="relative group bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all hover:border-purple-300">
                     <div className="absolute top-6 right-6 text-purple-100 group-hover:text-purple-50 transition-colors">
-                        <History size={48} />
+                        <Sparkles size={48} />
                     </div>
                     <div className="flex flex-col h-full">
                         <div className="p-2 bg-purple-50 w-fit rounded-lg text-purple-600 mb-4">
+                            <BookOpen size={24} />
+                        </div>
+                        <h4 className="text-lg font-semibold text-gray-900">专项练习生成</h4>
+                        <p className="mt-2 text-sm text-gray-500 mb-6 flex-1">
+                            针对计算、应用、几何等特定题型生成专项练习，快速突破薄弱点。
+                        </p>
+                        <Link
+                            href="/practice"
+                            className="inline-flex items-center text-sm font-medium text-purple-600 hover:text-purple-800"
+                        >
+                            开始练习 <ArrowRight className="ml-1 w-4 h-4" />
+                        </Link>
+                    </div>
+                </div>
+
+                {/* Quick Action: History */}
+                <div className="relative group bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all hover:border-gray-300">
+                    <div className="absolute top-6 right-6 text-gray-100 group-hover:text-gray-50 transition-colors">
+                        <History size={48} />
+                    </div>
+                    <div className="flex flex-col h-full">
+                        <div className="p-2 bg-gray-50 w-fit rounded-lg text-gray-600 mb-4">
                             <History size={24} />
                         </div>
                         <h4 className="text-lg font-semibold text-gray-900">历史试卷</h4>
@@ -49,7 +71,7 @@ export default function Dashboard() {
                         </p>
                         <Link
                             href="/history"
-                            className="inline-flex items-center text-sm font-medium text-purple-600 hover:text-purple-800"
+                            className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-800"
                         >
                             查看历史 <ArrowRight className="ml-1 w-4 h-4" />
                         </Link>

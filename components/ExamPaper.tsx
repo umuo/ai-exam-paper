@@ -204,7 +204,14 @@ const ExamPaper: React.FC<ExamPaperProps> = ({ data, onBack }) => {
                 {section.description && <div className="text-sm text-gray-600 mb-2 italic">说明：{section.description}</div>}
 
                 {/* Questions */}
-                <div className="space-y-4 pl-2">
+                <div className={`space-y-4 pl-2 ${section.questions[0] && [
+                    QuestionType.CALCULATION,
+                    QuestionType.JUDGMENT,
+                    QuestionType.FILL_IN_BLANK
+                  ].includes(section.questions[0].type)
+                    ? 'grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4 space-y-0'
+                    : ''
+                  }`}>
                   {section.questions.map((q, qIndex) => (
                     <QuestionItem key={q.id} question={q} index={qIndex + 1} />
                   ))}
