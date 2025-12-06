@@ -26,7 +26,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
             <div className="flex items-center gap-4">
                 {/* Place for future header items like User Profile, Notifications */}
                 <div className="hidden md:block text-sm text-gray-500">
-                    Powered by Gemini 2.5 Flash
+                    Powered by {process.env.NEXT_PUBLIC_GEMINI_MODEL || 'Gemini 2.5 Flash'}
                 </div>
             </div>
         </header>

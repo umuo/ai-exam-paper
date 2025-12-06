@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, FileText, Settings, HelpCircle, X } from 'lucide-react';
+import { Home, FileText, Settings, HelpCircle, X, LayoutList } from 'lucide-react';
 
 interface SidebarProps {
     isOpen: boolean;
@@ -15,6 +15,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     const navigation = [
         { name: '仪表盘', href: '/', icon: Home },
         { name: '试卷生成', href: '/generate', icon: FileText },
+        { name: '排版优化', href: '/format', icon: LayoutList },
         { name: '历史记录', href: '/history', icon: HelpCircle },
         // { name: '设置', href: '#', icon: Settings, current: false },
     ];

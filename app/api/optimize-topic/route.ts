@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
         const body: OptimizeRequest = await request.json();
         const { rawInput, grade, subject } = body;
 
-        const model = "gemini-2.5-flash";
+        const model = process.env.NEXT_PUBLIC_GEMINI_MODEL || "gemini-2.5-flash";
         const prompt = `
       User input: "${rawInput}"
       Context: Grade ${grade}, Subject ${subject}.

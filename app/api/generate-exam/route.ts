@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
         const body: ExamRequest = await request.json();
         const { level, gradeSpec, subject, topicDescription, difficulty } = body;
 
-        const model = "gemini-2.5-flash";
+        const model = process.env.NEXT_PUBLIC_GEMINI_MODEL || "gemini-2.5-flash";
 
         const prompt = `
       你是一位专业的中国${level}老师。请根据以下要求生成一份完整的试卷：
