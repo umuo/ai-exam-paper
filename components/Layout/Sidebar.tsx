@@ -38,8 +38,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         no-print
       `}>
                 <div className="flex items-center justify-between h-16 px-6 border-b border-gray-100">
-                    <div className="flex items-center gap-2 font-bold text-xl text-blue-700">
-                        <FileText className="w-6 h-6" />
+                    <div className="flex items-center gap-2 font-bold text-xl bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
+                        <FileText className="w-6 h-6 text-blue-600" />
                         <span>AI Exam</span>
                     </div>
                     <button
