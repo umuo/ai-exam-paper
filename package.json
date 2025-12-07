@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@google/genai": "^1.31.0",
+    "@napi-rs/canvas": "^0.1.84",
     "html2pdf.js": "^0.12.1",
     "lucide-react": "^0.555.0",
     "mammoth": "^1.11.0",
