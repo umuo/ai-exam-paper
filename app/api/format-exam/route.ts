@@ -140,7 +140,7 @@ export async function POST(request: NextRequest) {
             // Step 4: Generating
             await writer.write(encoder.encode(JSON.stringify({ status: 'formatting', message: '正在生成标准排版...' }) + '\n'));
 
-            const response = await ai.models.generateContent({
+            const result = await ai.models.generateContentStream({
                 model: model,
                 contents: [{ parts: [{ text: prompt }] }],
                 config: {
@@ -149,11 +149,40 @@ export async function POST(request: NextRequest) {
                 }
             });
 
-            const jsonText = response.text;
-            if (!jsonText) throw new Error("No data received from AI");
+            let aggregatedText = '';
+            // @ts-ignore
+            const stream = result.stream || result;
+            for await (const chunk of stream) {
+                console.log('Stream Chunk:', chunk);
+                let chunkText = '';
+                try {
+                    if (typeof chunk.text === 'function') {
+                        chunkText = chunk.text();
+                    } else if (typeof chunk.text === 'string') {
+                        chunkText = chunk.text;
+                    } else {
+                        console.warn('Unknown chunk format:', chunk);
+                    }
+                } catch (e) {
+                    console.error('Error extracting text from chunk:', e);
+                }
+
+                if (chunkText) {
+                    aggregatedText += chunkText;
+                    // Send detailed generation log
+                    await writer.write(encoder.encode(JSON.stringify({ status: 'generating', chunk: chunkText }) + '\n'));
+                }
+            }
 
             // Step 5: Complete
-            const resultData = JSON.parse(jsonText);
+            let resultData;
+            try {
+                resultData = JSON.parse(aggregatedText);
+            } catch (e) {
+                console.error("JSON Parse Error on full text:", aggregatedText);
+                throw new Error("AI output was not valid JSON");
+            }
+
             await writer.write(encoder.encode(JSON.stringify({ status: 'complete', data: resultData }) + '\n'));
 
         } catch (error) {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Upload, FileText, AlertCircle, Loader2 } from 'lucide-react';
 import ExamPaper from '@/components/ExamPaper';
 import { ExamData } from '@/types';
@@ -12,6 +12,14 @@ export default function FormatPage() {
     const [uploadStatus, setUploadStatus] = useState<'idle' | 'parsing' | 'analyzing' | 'formatting' | 'complete' | 'error'>('idle');
     const [error, setError] = useState<string | null>(null);
     const [examData, setExamData] = useState<ExamData | null>(null);
+    const [logContent, setLogContent] = useState<string>('');
+    const logEndRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (logEndRef.current) {
+            logEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+    }, [logContent]);
 
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault();
@@ -46,6 +54,7 @@ export default function FormatPage() {
 
         setIsUploading(true);
         setUploadStatus('parsing');
+        setLogContent(''); // Reset logs
         setError(null);
 
         const formData = new FormData();
@@ -70,10 +79,6 @@ export default function FormatPage() {
 
                 buffer += decoder.decode(value, { stream: true });
                 const lines = buffer.split('\n');
-                // Keep the last line in buffer if it's potentially incomplete
-                // But since we are controlling server, we usually send newline at end of JSON
-                // To be safe, we pop the last one and add it back to buffer if not empty
-                // Actually, let's just process all complete lines
                 buffer = lines.pop() || '';
 
                 for (const line of lines) {
@@ -86,12 +91,13 @@ export default function FormatPage() {
                         } else if (update.status === 'complete') {
                             finalData = update.data;
                             setUploadStatus('complete');
+                        } else if (update.status === 'generating') {
+                            setLogContent(prev => prev + update.chunk);
                         } else {
                             setUploadStatus(update.status);
                         }
                     } catch (e) {
                         if (e instanceof Error && e.message !== "Unexpected end of JSON input") {
-                            // Only throw real errors, ignore json parse errors on partial chunks if any
                             throw e;
                         }
                     }
@@ -112,7 +118,6 @@ export default function FormatPage() {
             setUploadStatus('error');
         } finally {
             setIsUploading(false);
-            // Reset status if complete after a delay? No, we switch view.
         }
     };
 
@@ -165,7 +170,6 @@ export default function FormatPage() {
                     onDragLeave={handleDragLeave}
                     onDrop={handleDrop}
                 >
-                    {/* Input is always there but disabled during upload */}
                     <input
                         type="file"
                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
@@ -176,8 +180,8 @@ export default function FormatPage() {
 
                     <div className="flex flex-col items-center justify-center pointer-events-none relative z-10">
                         {isUploading ? (
-                            <div className="w-full max-w-sm mx-auto">
-                                <div className="space-y-6">
+                            <div className="w-full max-w-lg mx-auto">
+                                <div className="space-y-6 mb-8">
                                     {steps.map((step, index) => {
                                         const isCompleted = index < currentStepIndex;
                                         const isCurrent = index === currentStepIndex;
@@ -211,6 +215,29 @@ export default function FormatPage() {
                                         );
                                     })}
                                 </div>
+
+                                {/* Log Viewer */}
+                                {uploadStatus !== 'parsing' && (
+                                    <div className="bg-gray-900 rounded-lg p-4 text-left font-mono text-xs overflow-hidden shadow-lg border border-gray-700">
+                                        <div className="flex justify-between items-center mb-2 border-b border-gray-700 pb-2">
+                                            <span className="text-gray-400">AI Execution Logs</span>
+                                            {uploadStatus === 'formatting' ? (
+                                                <span className="flex items-center gap-1 text-green-400">
+                                                    <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+                                                    Streaming
+                                                </span>
+                                            ) : (
+                                                <span className="text-gray-500">Idle</span>
+                                            )}
+                                        </div>
+                                        <div className="h-48 overflow-y-auto text-gray-300 space-y-1 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent">
+                                            <div className="whitespace-pre-wrap break-all pointer-events-auto select-text">
+                                                {logContent || <span className="text-gray-600 italic">Waiting for AI stream...</span>}
+                                                <div ref={logEndRef} className="h-2"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         ) : (
                             <>
