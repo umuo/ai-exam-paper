@@ -205,9 +205,7 @@ const ExamPaper: React.FC<ExamPaperProps> = ({ data, onBack }) => {
 
                 {/* Questions */}
                 <div className={`space-y-4 pl-2 ${section.questions[0] && [
-                  QuestionType.CALCULATION,
-                  QuestionType.JUDGMENT,
-                  QuestionType.FILL_IN_BLANK
+                  QuestionType.CALCULATION
                 ].includes(section.questions[0].type)
                   ? 'grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4 space-y-0'
                   : ''
@@ -233,6 +231,15 @@ const ExamPaper: React.FC<ExamPaperProps> = ({ data, onBack }) => {
 
 const QuestionItem: React.FC<{ question: Question; index: number }> = ({ question, index }) => {
 
+  // Helper to detect if it's a simple oral calculation (e.g. "1+1=")
+  const isOralCalculation = (q: Question) => {
+    if (q.type !== QuestionType.CALCULATION) return false;
+    const text = q.text.replace(/\s/g, '');
+    const isShort = text.length < 30;
+    const hasEquals = text.includes('=') || text.includes('＝');
+    return isShort && hasEquals;
+  };
+
   // Helper to ensure blanks are wide enough for handwriting
   const processQuestionText = (text: string, type: QuestionType) => {
     let processedText = text;
@@ -247,6 +254,8 @@ const QuestionItem: React.FC<{ question: Question; index: number }> = ({ questio
 
     return processedText;
   };
+
+
 
   return (
     // Added 'break-inside-avoid' to ensure each question block remains intact
@@ -304,7 +313,7 @@ const QuestionItem: React.FC<{ question: Question; index: number }> = ({ questio
           )}
 
           {/* Short Answer / Calculation / Essay Spaces */}
-          {(question.type === QuestionType.SHORT_ANSWER || question.type === QuestionType.CALCULATION || question.type === QuestionType.ESSAY) && (
+          {(question.type === QuestionType.SHORT_ANSWER || (question.type === QuestionType.CALCULATION && !isOralCalculation(question)) || question.type === QuestionType.ESSAY) && (
             <div className="w-full mt-2 border-b border-transparent">
               {Array.from({ length: question.answerSpaceLines || 3 }).map((_, i) => (
                 <div key={i} className="w-full h-8 border-b border-gray-300 border-dashed" />
