@@ -264,7 +264,7 @@ const QuestionItem: React.FC<{ question: Question; index: number }> = ({ questio
         <span className="font-semibold select-none pt-1">{index}.</span>
         <div className="flex-1">
           {/* Question Text & Score */}
-          <div className="leading-8 text-justify"> {/* Increased line height for better readability */}
+          <div className="leading-8 text-justify whitespace-pre-wrap"> {/* Increased line height and added pre-wrap */}
             <span>{processQuestionText(question.text, question.type)}</span>
 
             <span className="text-gray-500 text-sm ml-2 select-none align-baseline">({question.score}分)</span>

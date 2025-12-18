@@ -1,7 +1,7 @@
 import { GoogleGenAI, Type, Schema } from "@google/genai";
 import { NextRequest, NextResponse } from "next/server";
 import mammoth from "mammoth";
-const pdf = require("pdf-parse");
+// pdf-parse will be required dynamically
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
 
@@ -70,44 +70,66 @@ const examSchema: Schema = {
 };
 
 export async function POST(request: NextRequest) {
-    try {
-        const formData = await request.formData();
-        const file = formData.get("file") as File;
+    const encoder = new TextEncoder();
+    const stream = new TransformStream();
+    const writer = stream.writable.getWriter();
 
-        if (!file) {
-            return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
-        }
+    (async () => {
+        try {
+            // Step 1: Receiving File
+            // Note: We can't strictly "stream" the upload progress here easily without client-side tracking,
+            // but we can acknowledge receipt.
 
-        const buffer = Buffer.from(await file.arrayBuffer());
-        let rawText = "";
+            const formData = await request.formData();
+            const file = formData.get("file") as File;
 
-        if (file.type === "application/pdf") {
-            const data = await pdf(buffer);
-            rawText = data.text;
-        } else if (
-            file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
-            file.name.endsWith(".docx")
-        ) {
-            const result = await mammoth.extractRawText({ buffer });
-            rawText = result.value;
-        } else {
-            return NextResponse.json({ error: "Unsupported file type. Please upload PDF or DOCX." }, { status: 400 });
-        }
+            if (!file) {
+                throw new Error("No file uploaded");
+            }
 
-        if (!rawText || rawText.trim().length === 0) {
-            return NextResponse.json({ error: "Could not extract text from file." }, { status: 400 });
-        }
+            // Step 2: Parsing
+            await writer.write(encoder.encode(JSON.stringify({ status: 'parsing', message: '正在解析文档内容...' }) + '\n'));
 
-        const model = process.env.NEXT_PUBLIC_GEMINI_MODEL || "gemini-2.5-flash";
-        const prompt = `
+            const buffer = Buffer.from(await file.arrayBuffer());
+            let rawText = "";
+
+            if (file.type === "application/pdf") {
+                const pdf = require("pdf-parse");
+                const data = await pdf(buffer);
+                rawText = data.text;
+            } else if (
+                file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+                file.name.endsWith(".docx")
+            ) {
+                const result = await mammoth.extractRawText({ buffer });
+                rawText = result.value;
+            } else {
+                throw new Error("Unsupported file type. Please upload PDF or DOCX.");
+            }
+
+            if (!rawText || rawText.trim().length === 0) {
+                throw new Error("Could not extract text from file.");
+            }
+
+            // Step 3: Preparing AI
+            await writer.write(encoder.encode(JSON.stringify({ status: 'analyzing', message: 'AI 正在分析试卷结构...' }) + '\n'));
+
+            const model = process.env.NEXT_PUBLIC_GEMINI_MODEL || "gemini-2.5-flash";
+            const prompt = `
             You are an expert exam formatter. I will provide raw text extracted from a document.
             Your task is to:
             1. Identify the exam structure (Title, Subject, Grade).
             2. Extract all questions.
-            3. FIX FORMATTING:
+            3. Classify Question Types CAREFULLY:
+               - 'calculation': STRICTLY for pure mathematical expressions (e.g., "1+1=", "2x+3=7"). NO word problems here.
+               - 'essay': Use this for "Application Questions", "Word Problems", or any question dealing with real-world scenarios, even if it involves calculation.
+               - 'fill_in_blank', 'multiple_choice', etc. as usual.
+            4. FIX FORMATTING:
                - Ensure fill-in-the-blank brackets are standardized (e.g., "(       )" with enough space). 
                - Ensure options for multiple choice are correctly identified.
-            4. Structure the output into the specified JSON format.
+               - CRITICAL FOR CALCULATION QUESTIONS: If a single question number contains multiple short calculations (e.g., "1. 9+4=  12-3= ..."), YOU MUST SPLIT them into separate questions with their own IDs, OR keep them as one question but ensure the text uses newlines to separate them clearly.
+               - A specific rule: If you see a group of oral calculations under one number, split them if possible, otherwise format them with ample spacing or newlines in the 'text' field.
+            5. Structure the output into the specified JSON format.
 
             Raw Text:
             """
@@ -115,25 +137,39 @@ export async function POST(request: NextRequest) {
             """
         `;
 
-        const response = await ai.models.generateContent({
-            model: model,
-            contents: [{ parts: [{ text: prompt }] }],
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: examSchema,
-            }
-        });
+            // Step 4: Generating
+            await writer.write(encoder.encode(JSON.stringify({ status: 'formatting', message: '正在生成标准排版...' }) + '\n'));
 
-        const jsonText = response.text;
-        if (!jsonText) throw new Error("No data received from AI");
+            const response = await ai.models.generateContent({
+                model: model,
+                contents: [{ parts: [{ text: prompt }] }],
+                config: {
+                    responseMimeType: "application/json",
+                    responseSchema: examSchema,
+                }
+            });
 
-        return NextResponse.json(JSON.parse(jsonText));
+            const jsonText = response.text;
+            if (!jsonText) throw new Error("No data received from AI");
 
-    } catch (error) {
-        console.error("Format error:", error);
-        return NextResponse.json(
-            { error: error instanceof Error ? error.message : "Formatting failed" },
-            { status: 500 }
-        );
-    }
+            // Step 5: Complete
+            const resultData = JSON.parse(jsonText);
+            await writer.write(encoder.encode(JSON.stringify({ status: 'complete', data: resultData }) + '\n'));
+
+        } catch (error) {
+            console.error("Format error:", error);
+            const msg = error instanceof Error ? error.message : "Formatting failed";
+            await writer.write(encoder.encode(JSON.stringify({ status: 'error', message: msg }) + '\n'));
+        } finally {
+            await writer.close();
+        }
+    })();
+
+    return new NextResponse(stream.readable, {
+        headers: {
+            'Content-Type': 'application/x-ndjson',
+            'Connection': 'keep-alive',
+            'Cache-Control': 'no-cache, no-transform',
+        },
+    });
 }
