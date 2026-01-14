@@ -73,8 +73,16 @@ export default function FormatPage() {
         setLogContent(''); // Reset logs
         setError(null);
 
+        // 获取 AI provider 配置
+        const { getRequestConfig } = await import('@/services/aiConfigService');
+        const providerConfig = getRequestConfig();
+
         const formData = new FormData();
         formData.append('file', file);
+        formData.append('provider', providerConfig.provider);
+        if (providerConfig.openaiBaseUrl) formData.append('openaiBaseUrl', providerConfig.openaiBaseUrl);
+        if (providerConfig.openaiApiKey) formData.append('openaiApiKey', providerConfig.openaiApiKey);
+        if (providerConfig.openaiModel) formData.append('openaiModel', providerConfig.openaiModel);
 
         try {
             const response = await fetch('/api/format-exam', {
@@ -148,12 +156,22 @@ export default function FormatPage() {
         setError(null);
 
         try {
+            // 获取 AI provider 配置
+            const { getRequestConfig } = await import('@/services/aiConfigService');
+            const providerConfig = getRequestConfig();
+
             const response = await fetch('/api/parse-text', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ textContent }),
+                body: JSON.stringify({
+                    textContent,
+                    provider: providerConfig.provider,
+                    openaiBaseUrl: providerConfig.openaiBaseUrl,
+                    openaiApiKey: providerConfig.openaiApiKey,
+                    openaiModel: providerConfig.openaiModel,
+                }),
             });
 
             if (!response.ok) {

@@ -1,5 +1,6 @@
 import { GoogleGenAI, Type, Schema } from "@google/genai";
 import { NextRequest, NextResponse } from "next/server";
+import { callOpenAI, getProviderFromJson } from "@/services/openaiService";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
 
@@ -79,6 +80,10 @@ const examSchema: Schema = {
 
 interface ParseTextRequest {
     textContent: string;
+    provider?: 'gemini' | 'openai';
+    openaiBaseUrl?: string;
+    openaiApiKey?: string;
+    openaiModel?: string;
 }
 
 export async function POST(request: NextRequest) {
@@ -146,21 +151,50 @@ ${textContent}
 请严格按照 JSON Schema 格式输出。
         `;
 
-        // Generate structured response
-        const response = await ai.models.generateContent({
-            model: model,
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: examSchema,
-                temperature: 0.3,
-            }
-        });
+        // 获取 provider 配置
+        let providerConfig: ReturnType<typeof getProviderFromJson>;
+        try {
+            providerConfig = getProviderFromJson(body);
+        } catch {
+            providerConfig = { provider: 'gemini' };
+        }
+        console.log('parse-text using provider:', providerConfig.provider);
 
-        const jsonText = response.text;
-        if (!jsonText) throw new Error("No data received from AI");
+        let examData;
 
-        const examData = JSON.parse(jsonText);
+        if (providerConfig.provider === 'openai' && providerConfig.openaiConfig) {
+            // 使用 OpenAI API
+            const openaiResult = await callOpenAI(
+                providerConfig.openaiConfig,
+                [
+                    {
+                        role: 'system',
+                        content: '你是一个专业的试卷格式整理助手。请将用户提供的原始文本整理成结构化的JSON格式试卷数据。'
+                    },
+                    { role: 'user', content: prompt }
+                ],
+                {
+                    temperature: 0.3,
+                    response_format: { type: 'json_object' }
+                }
+            );
+            examData = JSON.parse(openaiResult);
+        } else {
+            // 使用 Gemini API
+            const response = await ai.models.generateContent({
+                model: model,
+                contents: prompt,
+                config: {
+                    responseMimeType: "application/json",
+                    responseSchema: examSchema,
+                    temperature: 0.3,
+                }
+            });
+
+            const jsonText = response.text;
+            if (!jsonText) throw new Error("No data received from AI");
+            examData = JSON.parse(jsonText);
+        }
 
         return NextResponse.json(examData);
 
