@@ -51,8 +51,20 @@ export default function FormatPage() {
     };
 
     const handleUpload = async (file: File) => {
-        if (!file.type.includes('pdf') && !file.name.endsWith('.docx')) {
-            setError('请上传 PDF 或 Word (.docx) 文件');
+        const fileName = file.name.toLowerCase();
+        const isValidType =
+            file.type.includes('pdf') ||
+            fileName.endsWith('.docx') ||
+            fileName.endsWith('.pptx');
+
+        // 特殊处理旧版 .ppt
+        if (fileName.endsWith('.ppt') && !fileName.endsWith('.pptx')) {
+            setError('不支持旧版 .ppt 格式，请在 PowerPoint 中另存为 .pptx 格式后重新上传');
+            return;
+        }
+
+        if (!isValidType) {
+            setError('请上传 PDF、Word (.docx) 或 PowerPoint (.pptx) 文件');
             return;
         }
 
@@ -201,7 +213,7 @@ export default function FormatPage() {
             <div className="max-w-3xl mx-auto">
                 <h2 className="text-3xl font-bold text-gray-900 mb-4">自定义试卷格式化</h2>
                 <p className="text-lg text-gray-600 mb-8">
-                    粘贴您的试题内容或上传文件，AI 将自动整理格式、统一排版，生成专业试卷。
+                    粘贴您的试题内容或上传文件（支持 PDF、Word、PowerPoint），AI 将自动整理格式、统一排版，生成专业试卷。
                 </p>
 
                 {/* Tab Switcher */}
@@ -289,7 +301,7 @@ export default function FormatPage() {
                             type="file"
                             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
                             onChange={handleFileSelect}
-                            accept=".pdf,.docx"
+                            accept=".pdf,.docx,.pptx"
                             disabled={isUploading}
                         />
 
@@ -363,7 +375,7 @@ export default function FormatPage() {
                                         点击或拖拽文件到这里
                                     </h3>
                                     <p className="text-gray-500 max-w-sm mx-auto">
-                                        支持 PDF 和 Word (.docx) 格式。文件大小建议不超过 10MB。
+                                        支持 PDF、Word (.docx) 和 PowerPoint (.pptx) 格式。文件大小建议不超过 10MB。
                                     </p>
                                 </>
                             )}
