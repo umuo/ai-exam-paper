@@ -2,7 +2,8 @@
 
 import React, { useRef, useState } from 'react';
 import { ExamData, Question, QuestionType } from '@/types';
-import { Printer, ArrowLeft, Download, Loader2 } from 'lucide-react';
+import { Printer, ArrowLeft, Download, Loader2, FileText } from 'lucide-react';
+import { exportPracticeToWord } from '@/services/wordExportService';
 
 interface PracticePaperProps {
     data: ExamData;
@@ -12,6 +13,7 @@ interface PracticePaperProps {
 const PracticePaper: React.FC<PracticePaperProps> = ({ data, onBack }) => {
     const paperRef = useRef<HTMLDivElement>(null);
     const [isDownloading, setIsDownloading] = useState(false);
+    const [isDownloadingWord, setIsDownloadingWord] = useState(false);
 
     const handlePrint = () => {
         window.focus();
@@ -82,6 +84,20 @@ const PracticePaper: React.FC<PracticePaperProps> = ({ data, onBack }) => {
         }
     };
 
+    const handleDownloadWord = async () => {
+        if (isDownloadingWord) return;
+        setIsDownloadingWord(true);
+
+        try {
+            await exportPracticeToWord(data);
+        } catch (error) {
+            console.error("Word generation failed", error);
+            alert("Word导出遇到问题，请稍后重试。");
+        } finally {
+            setIsDownloadingWord(false);
+        }
+    };
+
     return (
         <div className="flex flex-col items-center w-full max-w-5xl mx-auto pb-12">
 
@@ -104,6 +120,15 @@ const PracticePaper: React.FC<PracticePaperProps> = ({ data, onBack }) => {
                     >
                         {isDownloading ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />}
                         {isDownloading ? '生成中...' : '导出 PDF'}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handleDownloadWord}
+                        disabled={isDownloadingWord}
+                        className="flex items-center gap-2 bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-lg font-medium shadow-sm hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {isDownloadingWord ? <Loader2 size={18} className="animate-spin" /> : <FileText size={18} />}
+                        {isDownloadingWord ? '生成中...' : '导出 Word'}
                     </button>
                     <button
                         type="button"

@@ -2,7 +2,8 @@
 
 import React, { useRef, useState } from 'react';
 import { ExamData, Question, QuestionType } from '@/types';
-import { Printer, ArrowLeft, Download, Loader2 } from 'lucide-react';
+import { Printer, ArrowLeft, Download, Loader2, FileText } from 'lucide-react';
+import { exportExamToWord } from '@/services/wordExportService';
 
 interface ExamPaperProps {
   data: ExamData;
@@ -12,6 +13,7 @@ interface ExamPaperProps {
 const ExamPaper: React.FC<ExamPaperProps> = ({ data, onBack }) => {
   const paperRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isDownloadingWord, setIsDownloadingWord] = useState(false);
 
   const handlePrint = () => {
     // Ensure window has focus for the print dialog to appear (crucial for iframes)
@@ -98,6 +100,20 @@ const ExamPaper: React.FC<ExamPaperProps> = ({ data, onBack }) => {
     }
   };
 
+  const handleDownloadWord = async () => {
+    if (isDownloadingWord) return;
+    setIsDownloadingWord(true);
+
+    try {
+      await exportExamToWord(data);
+    } catch (error) {
+      console.error("Word generation failed", error);
+      alert("Word导出遇到问题，请稍后重试。");
+    } finally {
+      setIsDownloadingWord(false);
+    }
+  };
+
   return (
     <div className="flex flex-col items-center w-full max-w-5xl mx-auto pb-12">
 
@@ -120,6 +136,15 @@ const ExamPaper: React.FC<ExamPaperProps> = ({ data, onBack }) => {
           >
             {isDownloading ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />}
             {isDownloading ? '生成中...' : '导出 PDF'}
+          </button>
+          <button
+            type="button"
+            onClick={handleDownloadWord}
+            disabled={isDownloadingWord}
+            className="flex items-center gap-2 bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-lg font-medium shadow-sm hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isDownloadingWord ? <Loader2 size={18} className="animate-spin" /> : <FileText size={18} />}
+            {isDownloadingWord ? '生成中...' : '导出 Word'}
           </button>
           <button
             type="button"
